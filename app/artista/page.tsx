@@ -5,7 +5,10 @@ import { SignOutButton } from "@/components/auth/sign-out-button"
 
 export const metadata: Metadata = { title: "Panel del artista · KONS" }
 
-const SECTIONS = [{ href: "/artista/perfil", label: "Mi perfil" }]
+const SECTIONS = [
+  { href: "/artista/perfil", label: "Mi perfil" },
+  { href: "/artista/galerias", label: "Mis galerías" },
+]
 
 export default function ArtistPage() {
   return (
