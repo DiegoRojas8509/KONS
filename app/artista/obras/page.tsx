@@ -37,6 +37,12 @@ export default async function ArtworksPage() {
               <p className="font-mono text-xs text-muted-foreground">
                 {a.width_cm} × {a.height_cm} cm · {a.orientation} · {money.format(a.monthly_rent)}/mes
               </p>
+              {a.rejectionNote && (
+                <p className="mt-1 border-l-2 pl-3 text-sm">
+                  <span className="font-medium">Motivo del rechazo: </span>
+                  {a.rejectionNote}
+                </p>
+              )}
             </li>
           ))}
         </ul>

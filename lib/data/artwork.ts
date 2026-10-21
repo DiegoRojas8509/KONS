@@ -5,7 +5,7 @@ import type { Tables } from "@/lib/supabase/database.types"
 export type ArtworkListItem = Pick<
   Tables<"artworks">,
   "id" | "title" | "status" | "width_cm" | "height_cm" | "monthly_rent" | "orientation" | "created_at"
->
+> & { rejectionNote: string | null }
 
 export type MyArtwork = Omit<Tables<"artworks">, "reviewed_at" | "reviewed_by"> & { rejectionNote: string | null }
 
@@ -19,7 +19,25 @@ export async function listMyArtworks(): Promise<ArtworkListItem[]> {
     .select("id, title, status, width_cm, height_cm, monthly_rent, orientation, created_at")
     .eq("artist_id", artist.id)
     .order("created_at", { ascending: false })
-  return data ?? []
+  const artworks = data ?? []
+
+  // Latest rejection reason per work that is still being fixed (rejected, or reopened as draft). One query for the whole list.
+  const toFix = artworks.filter((a) => a.status === "rejected" || a.status === "draft").map((a) => a.id)
+  const noteById = new Map<string, string | null>()
+  if (toFix.length > 0) {
+    const { data: logs } = await supabase
+      .from("review_logs")
+      .select("entity_id, notes, created_at")
+      .eq("entity_type", "artwork")
+      .eq("decision", "rejected")
+      .in("entity_id", toFix)
+      .order("created_at", { ascending: false })
+    for (const log of logs ?? []) {
+      if (!noteById.has(log.entity_id)) noteById.set(log.entity_id, log.notes)
+    }
+  }
+
+  return artworks.map((a) => ({ ...a, rejectionNote: noteById.get(a.id) ?? null }))
 }
 
 export type ArtworkImageView = { id: string; url: string; isPrimary: boolean }
