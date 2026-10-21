@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: "Panel del artista · KONS" }
 const SECTIONS = [
   { href: "/artista/perfil", label: "Mi perfil" },
   { href: "/artista/galerias", label: "Mis galerías" },
+  { href: "/artista/obras", label: "Mis obras" },
 ]
 
 export default function ArtistPage() {
