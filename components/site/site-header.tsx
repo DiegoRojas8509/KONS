@@ -1,22 +1,26 @@
 import Link from "next/link"
 
 const navLink =
-  "font-mono text-xs uppercase tracking-[0.14em] text-ink underline-offset-8 hover:underline focus-visible:underline"
+  "font-mono text-[0.68rem] uppercase tracking-[0.12em] text-ink underline-offset-8 hover:underline focus-visible:underline sm:text-xs sm:tracking-[0.14em]"
 
-// Minimal editorial nav: mono caps on both sides of a centered wordmark.
+// Minimal editorial nav. Wide screens: mono caps on both sides of a centered wordmark.
+// Phones: wordmark on the left, every link on the right (there is no room for the split).
 export function SiteHeader() {
   return (
     <header className="border-b border-border">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-5 py-5 sm:px-8">
-        <nav aria-label="Principal" className="flex items-center gap-6">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-5 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:px-8">
+        <nav aria-label="Principal" className="hidden items-center gap-6 sm:flex">
           <Link href="/catalogo" className={navLink}>
             Catálogo
           </Link>
         </nav>
-        <Link href="/" aria-label="KONS, inicio" className="font-display text-3xl uppercase leading-none tracking-wide">
+        <Link href="/" aria-label="KONS, inicio" className="order-first font-display text-3xl uppercase leading-none tracking-wide sm:order-none">
           Kons
         </Link>
-        <nav aria-label="Cuenta" className="flex items-center justify-end gap-5 sm:gap-6">
+        <nav aria-label="Cuenta" className="flex items-center justify-end gap-4 sm:gap-6">
+          <Link href="/catalogo" className={`${navLink} sm:hidden`}>
+            Catálogo
+          </Link>
           <Link href="/registro" className={navLink}>
             Soy artista
           </Link>
