@@ -7,7 +7,8 @@ import { ARTWORK_STATUS_LABELS, PALETTES, SPACES } from "@/lib/constants/artwork
 import { ArtworkImages } from "@/components/artist/artwork-images"
 import { getArtworkImages, getMyArtwork } from "@/lib/data/artwork"
 import { listGalleries } from "@/lib/data/gallery"
-import { artworkIdSchema } from "@/lib/validations/artwork"
+import { SubmitForReview } from "@/components/artist/submit-for-review"
+import { artworkIdSchema, getSubmissionProblems } from "@/lib/validations/artwork"
 
 export const metadata: Metadata = { title: "Obra · KONS" }
 
@@ -63,6 +64,16 @@ export default async function ArtworkPage({ params }: { params: Promise<{ id: st
       )}
 
       <ArtworkImages artworkId={artwork.id} images={images} editable={editable} />
+
+      {editable && (
+        <SubmitForReview
+          artworkId={artwork.id}
+          problems={getSubmissionProblems(
+            artwork,
+            images.map((i) => ({ is_primary: i.isPrimary })),
+          )}
+        />
+      )}
     </main>
   )
 }

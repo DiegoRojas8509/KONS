@@ -6,7 +6,13 @@ import { redirect } from "next/navigation"
 import type { ActionResult } from "@/lib/actions/artist"
 import { getCurrentArtist } from "@/lib/data/artist"
 import { createClient } from "@/lib/supabase/server"
-import { artworkIdSchema, artworkSchema, toArtworkRow, type ArtworkInput } from "@/lib/validations/artwork"
+import {
+  artworkIdSchema,
+  artworkSchema,
+  getSubmissionProblems,
+  toArtworkRow,
+  type ArtworkInput,
+} from "@/lib/validations/artwork"
 
 export async function createArtwork(input: ArtworkInput): Promise<ActionResult> {
   const parsed = artworkSchema.safeParse(input)
@@ -26,6 +32,40 @@ export async function createArtwork(input: ArtworkInput): Promise<ActionResult> 
 
   revalidatePath("/artista/obras")
   redirect(`/artista/obras/${data.id}`)
+}
+
+export async function submitArtworkForReview(id: string): Promise<ActionResult> {
+  const parsedId = artworkIdSchema.safeParse(id)
+  if (!parsedId.success) return { error: "Obra no válida." }
+
+  const artist = await getCurrentArtist()
+  if (!artist || artist.status !== "approved") return { error: "Tu cuenta aún no está aprobada." }
+
+  const supabase = await createClient()
+  const { data: artwork } = await supabase
+    .from("artworks")
+    .select("id, title, width_cm, height_cm, monthly_rent, status")
+    .eq("id", parsedId.data)
+    .eq("artist_id", artist.id)
+    .in("status", ["draft", "rejected"])
+    .maybeSingle()
+  if (!artwork) return { error: "Esta obra ya no se puede enviar a revisión." }
+
+  const { data: images } = await supabase.from("artwork_images").select("is_primary").eq("artwork_id", artwork.id)
+  const problems = getSubmissionProblems(artwork, images ?? [])
+  if (problems.length > 0) return { error: problems.join(" ") }
+
+  // Locks the work for editing until the operator resolves it (RLS: artists can only move it to draft/pending_review/retired).
+  const { data, error } = await supabase
+    .from("artworks")
+    .update({ status: "pending_review" })
+    .eq("id", artwork.id)
+    .in("status", ["draft", "rejected"])
+    .select("id")
+  if (error || !data?.length) return { error: "No pudimos enviar la obra a revisión. Inténtalo de nuevo." }
+
+  revalidatePath("/artista/obras", "layout")
+  return { message: "Obra enviada a revisión." }
 }
 
 export async function updateArtwork(id: string, input: ArtworkInput): Promise<ActionResult> {

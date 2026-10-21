@@ -53,6 +53,20 @@ export type ArtworkInput = z.infer<typeof artworkSchema>
 
 export const artworkIdSchema = z.string().uuid()
 
+// What must be true before an artwork can go to review. The DB already guarantees title, measurements and rent.
+export function getSubmissionProblems(
+  artwork: { title: string; width_cm: number; height_cm: number; monthly_rent: number },
+  images: { is_primary: boolean }[],
+): string[] {
+  const problems: string[] = []
+  if (!artwork.title.trim()) problems.push("Falta el título.")
+  if (!(artwork.width_cm > 0 && artwork.height_cm > 0)) problems.push("Faltan las medidas.")
+  if (!(artwork.monthly_rent > 0)) problems.push("Falta la renta mensual.")
+  if (images.length === 0) problems.push("Agrega al menos una imagen.")
+  else if (!images.some((i) => i.is_primary)) problems.push("Define cuál es la imagen principal.")
+  return problems
+}
+
 // Orientation is NOT sent: the database derives it from the measurements.
 export function toArtworkRow(input: ArtworkInput) {
   return {
