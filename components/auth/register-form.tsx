@@ -48,6 +48,11 @@ export function RegisterForm() {
         {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
       </div>
       <div className="flex flex-col gap-2">
+        <Label htmlFor="displayName">Nombre artístico (opcional)</Label>
+        <Input id="displayName" aria-invalid={!!errors.displayName} {...register("displayName")} />
+        {errors.displayName && <p className="text-sm text-destructive">{errors.displayName.message}</p>}
+      </div>
+      <div className="flex flex-col gap-2">
         <Label htmlFor="email">Correo</Label>
         <Input id="email" type="email" autoComplete="email" aria-invalid={!!errors.email} {...register("email")} />
         {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}

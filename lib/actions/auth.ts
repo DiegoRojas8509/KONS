@@ -37,8 +37,11 @@ export async function signUp(input: RegisterInput): Promise<AuthActionResult> {
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      // The profile (always role 'artist') is created by the on_auth_user_created trigger.
-      data: { full_name: parsed.data.fullName },
+      // The on_auth_user_created trigger creates the profile (always role 'artist') and a pending artist row.
+      data: {
+        full_name: parsed.data.fullName,
+        display_name: parsed.data.displayName || parsed.data.fullName,
+      },
       emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
     },
   })

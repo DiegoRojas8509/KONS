@@ -17,6 +17,8 @@ export const registerSchema = z.object({
     .trim()
     .min(2, "Escribe tu nombre completo.")
     .max(80, "El nombre es demasiado largo."),
+  // Optional: defaults to the full name when left empty.
+  displayName: z.string().trim().max(80, "El nombre artístico es demasiado largo.").optional(),
   email,
   password,
 })
