@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import type { Enums } from "@/lib/supabase/database.types"
+import type { CatalogFilters } from "@/lib/validations/catalog"
 
 export type CatalogItem = {
   id: string
@@ -20,16 +21,28 @@ const SIGNED_URL_SECONDS = 60 * 60
 
 // Public read, no session needed. The `anon` role can only read approved works and a fixed set of columns
 // (sale_price and review fields are not public), so never use select("*") here.
-export async function listCatalog(): Promise<CatalogItem[]> {
+export async function listCatalog(filters: CatalogFilters = { palettes: [], spaces: [] }): Promise<CatalogItem[]> {
   const supabase = await createClient()
-  const { data } = await supabase
+  let query = supabase
     .from("artworks")
     .select(
       "id, title, technique, width_cm, height_cm, depth_cm, orientation, monthly_rent, dominant_palette, recommended_spaces, created_at, artists(display_name), artwork_images(storage_path, is_primary)",
     )
     .eq("status", "approved")
     .eq("artwork_images.is_primary", true)
-    .order("created_at", { ascending: false })
+
+  // Filters combine with AND; inside palette/space a work matches if it has ANY of the selected values.
+  if (filters.orientation) query = query.eq("orientation", filters.orientation)
+  if (filters.widthMin !== undefined) query = query.gte("width_cm", filters.widthMin)
+  if (filters.widthMax !== undefined) query = query.lte("width_cm", filters.widthMax)
+  if (filters.heightMin !== undefined) query = query.gte("height_cm", filters.heightMin)
+  if (filters.heightMax !== undefined) query = query.lte("height_cm", filters.heightMax)
+  if (filters.rentMin !== undefined) query = query.gte("monthly_rent", filters.rentMin)
+  if (filters.rentMax !== undefined) query = query.lte("monthly_rent", filters.rentMax)
+  if (filters.palettes.length > 0) query = query.overlaps("dominant_palette", filters.palettes)
+  if (filters.spaces.length > 0) query = query.overlaps("recommended_spaces", filters.spaces)
+
+  const { data } = await query.order("created_at", { ascending: false })
   const rows = data ?? []
 
   const paths = rows.flatMap((r) => r.artwork_images.map((i) => i.storage_path))
