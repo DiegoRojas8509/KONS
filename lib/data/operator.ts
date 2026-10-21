@@ -73,7 +73,58 @@ export async function countPending(): Promise<{ artists: number; artworks: numbe
   return { artists: artists.count ?? 0, artworks: artworks.count ?? 0 }
 }
 
-export type ReviewLog = Pick<Tables<"review_logs">, "id" | "decision" | "notes" | "created_at">
+export type ArtistForReview = Pick<
+  Tables<"artists">,
+  "id" | "display_name" | "bio" | "statement" | "city" | "instagram" | "status" | "created_at"
+> & { email: string | null; full_name: string | null }
+
+export async function getArtistForReview(id: string): Promise<ArtistForReview | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("artists")
+    .select(
+      "id, display_name, bio, statement, city, instagram, status, created_at, profiles!artists_profile_id_fkey(email, full_name)",
+    )
+    .eq("id", id)
+    .maybeSingle()
+  if (!data) return null
+  const { profiles, ...artist } = data
+  return { ...artist, email: profiles?.email ?? null, full_name: profiles?.full_name ?? null }
+}
+
+export type ArtworkForReview = Pick<
+  Tables<"artworks">,
+  | "id"
+  | "title"
+  | "technique"
+  | "year"
+  | "width_cm"
+  | "height_cm"
+  | "depth_cm"
+  | "orientation"
+  | "dominant_palette"
+  | "recommended_spaces"
+  | "monthly_rent"
+  | "sale_price"
+  | "status"
+  | "created_at"
+> & { artist_id: string; artist_name: string }
+
+export async function getArtworkForReview(id: string): Promise<ArtworkForReview | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from("artworks")
+    .select(
+      "id, title, technique, year, width_cm, height_cm, depth_cm, orientation, dominant_palette, recommended_spaces, monthly_rent, sale_price, status, created_at, artist_id, artists(display_name)",
+    )
+    .eq("id", id)
+    .maybeSingle()
+  if (!data) return null
+  const { artists, ...artwork } = data
+  return { ...artwork, artist_name: artists?.display_name ?? "—" }
+}
+
+export type ReviewLog =Pick<Tables<"review_logs">, "id" | "decision" | "notes" | "created_at">
 
 export async function listReviewLogs(entityType: "artist" | "artwork", entityId: string): Promise<ReviewLog[]> {
   const supabase = await createClient()
