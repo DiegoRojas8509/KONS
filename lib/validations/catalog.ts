@@ -1,5 +1,5 @@
 import { PALETTES, SPACES, type Palette, type Space } from "@/lib/constants/artwork"
-import { parseDecimal } from "@/lib/validations/artwork"
+import { parseDecimal, parseMoney } from "@/lib/validations/artwork"
 
 export type Orientation = "horizontal" | "vertical" | "square"
 
@@ -23,10 +23,10 @@ export const ORIENTATION_PARAM: Record<Orientation, string> = { horizontal: "hor
 
 const list = (value: string | string[] | undefined): string[] => (Array.isArray(value) ? value : value ? [value] : [])
 
-function number(value: string | string[] | undefined, max: number): number | undefined {
+function number(value: string | string[] | undefined, max: number, parse = parseDecimal): number | undefined {
   const raw = list(value)[0]
   if (raw === undefined) return undefined
-  const n = parseDecimal(raw)
+  const n = parse(raw)
   return n !== null && n >= 0 && n <= max ? n : undefined
 }
 
@@ -41,8 +41,8 @@ export function parseCatalogFilters(sp: SearchParams): CatalogFilters {
     heightMax: number(sp.alto_max, 2000),
     palettes: PALETTES.filter((p) => list(sp.paleta).includes(p)),
     spaces: SPACES.filter((s) => list(sp.espacio).includes(s)),
-    rentMin: number(sp.renta_min, 1_000_000),
-    rentMax: number(sp.renta_max, 1_000_000),
+    rentMin: number(sp.renta_min, 1_000_000, parseMoney),
+    rentMax: number(sp.renta_max, 1_000_000, parseMoney),
   }
 }
 

@@ -9,22 +9,28 @@ export function parseDecimal(value: string): number | null {
   return Number(normalized)
 }
 
-const requiredPositive = (label: string, max: number) =>
+// Money uses "," as thousands separator ("1,500" = 1500), unlike measurements where "1,80" is a decimal.
+export function parseMoney(value: string): number | null {
+  const trimmed = value.trim()
+  return /^\d{1,3}(,\d{3})+(\.\d+)?$/.test(trimmed) ? Number(trimmed.replaceAll(",", "")) : parseDecimal(trimmed)
+}
+
+const requiredPositive = (label: string, max: number, parse = parseDecimal) =>
   z
     .string()
     .trim()
     .refine((v) => {
-      const n = parseDecimal(v)
+      const n = parse(v)
       return n !== null && n > 0 && n <= max
     }, `${label}: escribe un número mayor a 0 (máximo ${max}).`)
 
-const optionalPositive = (label: string, max: number) =>
+const optionalPositive = (label: string, max: number, parse = parseDecimal) =>
   z
     .string()
     .trim()
     .refine((v) => {
       if (v === "") return true
-      const n = parseDecimal(v)
+      const n = parse(v)
       return n !== null && n > 0 && n <= max
     }, `${label}: escribe un número mayor a 0 (máximo ${max}) o déjalo vacío.`)
 
@@ -43,8 +49,8 @@ export const artworkSchema = z.object({
   depthCm: optionalPositive("Profundidad", 1000),
   dominantPalette: z.array(z.enum(PALETTES)).max(PALETTES.length),
   recommendedSpaces: z.array(z.enum(SPACES)).max(SPACES.length),
-  monthlyRent: requiredPositive("Renta mensual", 1_000_000),
-  salePrice: optionalPositive("Precio de venta", 100_000_000),
+  monthlyRent: requiredPositive("Renta mensual", 1_000_000, parseMoney),
+  salePrice: optionalPositive("Precio de venta", 100_000_000, parseMoney),
   // "" = no gallery
   galleryId: z.union([z.literal(""), z.string().uuid()]),
 })
@@ -52,6 +58,8 @@ export const artworkSchema = z.object({
 export type ArtworkInput = z.infer<typeof artworkSchema>
 
 export const artworkIdSchema = z.string().uuid()
+
+export const isUuid = (value: string) => artworkIdSchema.safeParse(value).success
 
 // What must be true before an artwork can go to review. The DB already guarantees title, measurements and rent.
 export function getSubmissionProblems(
@@ -78,8 +86,8 @@ export function toArtworkRow(input: ArtworkInput) {
     depth_cm: input.depthCm ? parseDecimal(input.depthCm) : null,
     dominant_palette: input.dominantPalette,
     recommended_spaces: input.recommendedSpaces,
-    monthly_rent: parseDecimal(input.monthlyRent) as number,
-    sale_price: input.salePrice ? parseDecimal(input.salePrice) : null,
+    monthly_rent: parseMoney(input.monthlyRent) as number,
+    sale_price: input.salePrice ? parseMoney(input.salePrice) : null,
     gallery_id: input.galleryId || null,
   }
 }

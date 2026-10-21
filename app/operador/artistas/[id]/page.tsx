@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { z } from "zod"
 
 import { ReviewHistory } from "@/components/operator/review-history"
 import { ReviewForm } from "@/components/operator/review-form"
 import { getArtistForReview, listReviewLogs } from "@/lib/data/operator"
+import { isUuid } from "@/lib/validations/artwork"
 
 export const metadata: Metadata = { title: "Revisar artista · KONS" }
 
@@ -22,7 +22,7 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export default async function ReviewArtistPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  if (!z.string().uuid().safeParse(id).success) notFound()
+  if (!isUuid(id)) notFound()
   const [artist, logs] = await Promise.all([getArtistForReview(id), listReviewLogs("artist", id)])
   if (!artist) notFound()
 

@@ -71,19 +71,30 @@ export async function registerArtworkImages(input: { artworkId: string; paths: s
 
   const ctx = await loadEditableArtwork(parsed.data.artworkId)
   if (!ctx) return { error: "Esta obra ya no se puede editar." }
-  if (!parsed.data.paths.every((p) => isOwnedImagePath(p, ctx.artist.id, parsed.data.artworkId))) {
+  const paths = [...new Set(parsed.data.paths)]
+  if (!paths.every((p) => isOwnedImagePath(p, ctx.artist.id, parsed.data.artworkId))) {
     return { error: "Ruta de imagen no válida." }
   }
 
   const { data: existing } = await ctx.supabase
     .from("artwork_images")
-    .select("position, is_primary")
+    .select("position, is_primary, storage_path")
     .eq("artwork_id", parsed.data.artworkId)
+  if (paths.some((p) => (existing ?? []).some((i) => i.storage_path === p))) return { error: "Esa imagen ya está registrada." }
+  if ((existing?.length ?? 0) + paths.length > MAX_IMAGES_PER_ARTWORK) {
+    return { error: `Máximo ${MAX_IMAGES_PER_ARTWORK} imágenes por obra.` }
+  }
+
+  // The browser uploads straight to Storage: make sure every file really arrived before recording it.
+  const folder = `${ctx.artist.id}/${parsed.data.artworkId}`
+  const { data: objects } = await ctx.supabase.storage.from(BUCKET).list(folder, { limit: 100 })
+  const uploaded = new Set((objects ?? []).map((o) => `${folder}/${o.name}`))
+  if (!paths.every((p) => uploaded.has(p))) return { error: "No encontramos alguna de las imágenes subidas. Inténtalo de nuevo." }
   const nextPosition = (existing ?? []).reduce((max, i) => Math.max(max, i.position + 1), 0)
   const hasPrimary = (existing ?? []).some((i) => i.is_primary)
 
   const { error } = await ctx.supabase.from("artwork_images").insert(
-    parsed.data.paths.map((storage_path, i) => ({
+    paths.map((storage_path, i) => ({
       artwork_id: parsed.data.artworkId,
       storage_path,
       position: nextPosition + i,

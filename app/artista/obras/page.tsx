@@ -3,10 +3,9 @@ import Link from "next/link"
 
 import { ARTWORK_STATUS_LABELS } from "@/lib/constants/artwork"
 import { listMyArtworks } from "@/lib/data/artwork"
+import { formatMoney, formatOrientation, formatSize } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Mis obras · KONS" }
-
-const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })
 
 export default async function ArtworksPage() {
   const artworks = await listMyArtworks()
@@ -35,7 +34,7 @@ export default async function ArtworksPage() {
                 <span className="text-sm">{ARTWORK_STATUS_LABELS[a.status]}</span>
               </div>
               <p className="font-mono text-xs text-muted-foreground">
-                {a.width_cm} × {a.height_cm} cm · {a.orientation} · {money.format(a.monthly_rent)}/mes
+                {formatSize(a.width_cm, a.height_cm)} · {formatOrientation(a.orientation)} · {formatMoney(a.monthly_rent)}/mes
               </p>
               {a.rejectionNote && (
                 <p className="mt-1 border-l-2 pl-3 text-sm">

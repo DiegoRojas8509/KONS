@@ -7,6 +7,7 @@ import { ARTWORK_STATUS_LABELS, PALETTES, SPACES } from "@/lib/constants/artwork
 import { ArtworkImages } from "@/components/artist/artwork-images"
 import { getArtworkImages, getMyArtwork } from "@/lib/data/artwork"
 import { listGalleries } from "@/lib/data/gallery"
+import { formatOrientation } from "@/lib/format"
 import { SubmitForReview } from "@/components/artist/submit-for-review"
 import { artworkIdSchema, getSubmissionProblems } from "@/lib/validations/artwork"
 
@@ -28,7 +29,7 @@ export default async function ArtworkPage({ params }: { params: Promise<{ id: st
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight">{artwork.title}</h1>
         <p className="text-sm text-muted-foreground">
-          Estado: {ARTWORK_STATUS_LABELS[artwork.status]} · Orientación: {artwork.orientation}
+          Estado: {ARTWORK_STATUS_LABELS[artwork.status]} · Orientación: {formatOrientation(artwork.orientation)}
         </p>
       </div>
 

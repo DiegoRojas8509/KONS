@@ -75,6 +75,10 @@ Si una tarea te lleva a tocar algo de esta lista, detente y pregunta.
 - `@hookform/resolvers` va en v5 y se instala con `--legacy-peer-deps` (la v6 choca con peers opcionales).
 - El proyecto vive en Documents (iCloud): `node_modules/` y `.next/` pueden sincronizarse; si estorba, usa `~/Documents/CLAUDE/repositorio/plugins/sistema/scripts/liberar-espacio.sh`.
 
+- **Dinero vs. medidas:** en renta y precio la coma es separador de miles (`1,500` = 1500); en medidas es decimal (`1,80` = 1.8). Usa `parseMoney` / `parseDecimal` de `lib/validations/artwork.ts`.
+- **Contacto del catálogo:** botón "Solicitar informes" por enlace; canales en `NEXT_PUBLIC_CONTACT_WHATSAPP` y `NEXT_PUBLIC_CONTACT_EMAIL`. `NEXT_PUBLIC_SITE_URL` fija la URL del correo de confirmación.
+- **Pruebas manuales/e2e:** los usuarios de prueba se borran con la API admin; borra primero al operador de último (las claves `reviewed_by` lo referencian).
+
 ### Convenciones
 - TypeScript estricto. Nada de `any`.
 - Tablas y columnas en Postgres: `snake_case`, en inglés.

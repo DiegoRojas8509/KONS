@@ -1,4 +1,5 @@
 import { getCurrentArtist } from "@/lib/data/artist"
+import { signImagePaths } from "@/lib/data/storage"
 import { createClient } from "@/lib/supabase/server"
 import type { Tables } from "@/lib/supabase/database.types"
 
@@ -42,9 +43,6 @@ export async function listMyArtworks(): Promise<ArtworkListItem[]> {
 
 export type ArtworkImageView = { id: string; url: string; isPrimary: boolean }
 
-const SIGNED_URL_SECONDS = 60 * 60
-
-// Images are served from a private bucket through short-lived signed URLs.
 export async function getArtworkImages(artworkId: string): Promise<ArtworkImageView[]> {
   const supabase = await createClient()
   const { data: rows } = await supabase
@@ -54,13 +52,10 @@ export async function getArtworkImages(artworkId: string): Promise<ArtworkImageV
     .order("position", { ascending: true })
   if (!rows?.length) return []
 
-  const { data: signed } = await supabase.storage
-    .from("artworks")
-    .createSignedUrls(
-      rows.map((r) => r.storage_path),
-      SIGNED_URL_SECONDS,
-    )
-  const urlByPath = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]))
+  const urlByPath = await signImagePaths(
+    supabase,
+    rows.map((r) => r.storage_path),
+  )
 
   return rows.flatMap((r) => {
     const url = urlByPath.get(r.storage_path)

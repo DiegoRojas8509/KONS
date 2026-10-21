@@ -31,7 +31,8 @@ export async function signUp(input: RegisterInput): Promise<AuthActionResult> {
     return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." }
   }
 
-  const origin = (await headers()).get("origin")
+  // Prefer the configured site URL; the Origin header is only a fallback for local development.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (await headers()).get("origin")
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -42,7 +43,7 @@ export async function signUp(input: RegisterInput): Promise<AuthActionResult> {
         full_name: parsed.data.fullName,
         display_name: parsed.data.displayName || parsed.data.fullName,
       },
-      emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
+      emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback` : undefined,
     },
   })
   if (error) {

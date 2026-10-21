@@ -38,16 +38,26 @@ export function ArtworkImages({ artworkId, images, editable }: Props) {
       if ("error" in prepared) return setError(prepared.error)
 
       const storage = createClient().storage.from("artworks")
+      const uploaded: string[] = []
+      let failed = false
       for (const [i, ticket] of prepared.tickets.entries()) {
         const { error: uploadError } = await storage.uploadToSignedUrl(ticket.path, ticket.token, files[i], {
           contentType: files[i].type,
         })
-        if (uploadError) return setError("No pudimos subir una de las imágenes. Inténtalo de nuevo.")
+        if (uploadError) {
+          failed = true
+          break
+        }
+        uploaded.push(ticket.path)
       }
 
-      const registered = await registerArtworkImages({ artworkId, paths: prepared.tickets.map((t) => t.path) })
-      if ("error" in registered) return setError(registered.error)
-      router.refresh()
+      // Record whatever did arrive, so a mid-way failure does not leave orphan files in Storage.
+      if (uploaded.length > 0) {
+        const registered = await registerArtworkImages({ artworkId, paths: uploaded })
+        if ("error" in registered) return setError(registered.error)
+        router.refresh()
+      }
+      if (failed) setError("No pudimos subir todas las imágenes. Revisa las que faltan y vuelve a intentarlo.")
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ""

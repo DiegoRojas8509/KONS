@@ -4,11 +4,11 @@ import { connection } from "next/server"
 
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { countPending, listPendingArtists, listPendingArtworks } from "@/lib/data/operator"
+import { formatMoney, formatSize } from "@/lib/format"
 
 export const metadata: Metadata = { title: "Bandeja de revisión · KONS" }
 
 const dateFormat = new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" })
-const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })
 
 type Tab = "artistas" | "obras"
 
@@ -103,7 +103,7 @@ export default async function OperatorInboxPage({ searchParams }: { searchParams
                 {w.title}
               </Link>
               <p className="font-mono text-xs text-muted-foreground">
-                {w.artist_name} · {w.width_cm} × {w.height_cm} cm · {money.format(w.monthly_rent)}/mes · enviada el{" "}
+                {w.artist_name} · {formatSize(w.width_cm, w.height_cm)} · {formatMoney(w.monthly_rent)}/mes · creada el{" "}
                 {dateFormat.format(new Date(w.created_at))}
               </p>
             </li>

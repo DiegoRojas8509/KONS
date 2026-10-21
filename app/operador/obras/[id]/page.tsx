@@ -1,17 +1,16 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { z } from "zod"
 
 import { ReviewHistory } from "@/components/operator/review-history"
 import { ReviewForm } from "@/components/operator/review-form"
 import { ARTWORK_STATUS_LABELS } from "@/lib/constants/artwork"
 import { getArtworkImages } from "@/lib/data/artwork"
 import { getArtworkForReview, listReviewLogs } from "@/lib/data/operator"
+import { formatMoney, formatOrientation, formatSize } from "@/lib/format"
+import { isUuid } from "@/lib/validations/artwork"
 
 export const metadata: Metadata = { title: "Revisar obra · KONS" }
-
-const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 })
 
 function Field({ label, value }: { label: string; value: string | null }) {
   return (
@@ -24,11 +23,9 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export default async function ReviewArtworkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  if (!z.string().uuid().safeParse(id).success) notFound()
+  if (!isUuid(id)) notFound()
   const [artwork, images, logs] = await Promise.all([getArtworkForReview(id), getArtworkImages(id), listReviewLogs("artwork", id)])
   if (!artwork) notFound()
-
-  const dimensions = [artwork.width_cm, artwork.height_cm, artwork.depth_cm].filter((n) => n !== null).join(" × ")
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 px-6 py-12">
@@ -58,12 +55,12 @@ export default async function ReviewArtworkPage({ params }: { params: Promise<{ 
       <dl className="grid gap-5 sm:grid-cols-2">
         <Field label="Técnica" value={artwork.technique} />
         <Field label="Año" value={artwork.year?.toString() ?? null} />
-        <Field label="Medidas (cm)" value={dimensions} />
-        <Field label="Orientación" value={artwork.orientation} />
+        <Field label="Medidas" value={formatSize(artwork.width_cm, artwork.height_cm, artwork.depth_cm)} />
+        <Field label="Orientación" value={formatOrientation(artwork.orientation)} />
         <Field label="Paleta" value={artwork.dominant_palette.join(", ")} />
         <Field label="Espacios recomendados" value={artwork.recommended_spaces.join(", ")} />
-        <Field label="Renta mensual" value={money.format(artwork.monthly_rent)} />
-        <Field label="Precio de venta" value={artwork.sale_price !== null ? money.format(artwork.sale_price) : null} />
+        <Field label="Renta mensual" value={formatMoney(artwork.monthly_rent)} />
+        <Field label="Precio de venta" value={artwork.sale_price !== null ? formatMoney(artwork.sale_price) : null} />
       </dl>
 
       {artwork.status === "pending_review" ? (
