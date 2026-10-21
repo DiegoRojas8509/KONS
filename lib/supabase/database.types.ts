@@ -301,6 +301,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_primary_artwork_image: {
+        Args: { p_artwork_id: string; p_image_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       artwork_orientation: "horizontal" | "vertical" | "square"

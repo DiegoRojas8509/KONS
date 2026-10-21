@@ -4,7 +4,8 @@ import { notFound } from "next/navigation"
 
 import { ArtworkForm } from "@/components/artist/artwork-form"
 import { ARTWORK_STATUS_LABELS, PALETTES, SPACES } from "@/lib/constants/artwork"
-import { getMyArtwork } from "@/lib/data/artwork"
+import { ArtworkImages } from "@/components/artist/artwork-images"
+import { getArtworkImages, getMyArtwork } from "@/lib/data/artwork"
 import { listGalleries } from "@/lib/data/gallery"
 import { artworkIdSchema } from "@/lib/validations/artwork"
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: "Obra · KONS" }
 export default async function ArtworkPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   if (!artworkIdSchema.safeParse(id).success) notFound()
-  const [artwork, galleries] = await Promise.all([getMyArtwork(id), listGalleries()])
+  const [artwork, galleries, images] = await Promise.all([getMyArtwork(id), listGalleries(), getArtworkImages(id)])
   if (!artwork) notFound()
 
   const editable = artwork.status === "draft" || artwork.status === "rejected"
@@ -60,6 +61,8 @@ export default async function ArtworkPage({ params }: { params: Promise<{ id: st
           Esta obra está en estado “{ARTWORK_STATUS_LABELS[artwork.status]}” y ya no se puede editar.
         </p>
       )}
+
+      <ArtworkImages artworkId={artwork.id} images={images} editable={editable} />
     </main>
   )
 }
