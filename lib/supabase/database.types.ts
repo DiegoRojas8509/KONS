@@ -190,6 +190,100 @@ export type Database = {
           },
         ]
       }
+      collection_items: {
+        Row: { artwork_id: string; collection_id: string; position: number }
+        Insert: { artwork_id: string; collection_id: string; position?: number }
+        Update: { artwork_id?: string; collection_id?: string; position?: number }
+        Relationships: [
+          {
+            foreignKeyName: "collection_items_artwork_id_fkey"
+            columns: ["artwork_id"]
+            isOneToOne: true
+            referencedRelation: "artworks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          cover_artwork_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          kind: Database["public"]["Enums"]["collection_kind"]
+          monthly_price: number
+          palette: string[]
+          reveal: Database["public"]["Enums"]["collection_reveal"]
+          slug: string
+          source_gallery_id: string | null
+          space_types: string[]
+          status: Database["public"]["Enums"]["collection_status"]
+          title: string
+        }
+        Insert: {
+          cover_artwork_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["collection_kind"]
+          monthly_price: number
+          palette?: string[]
+          reveal?: Database["public"]["Enums"]["collection_reveal"]
+          slug: string
+          source_gallery_id?: string | null
+          space_types?: string[]
+          status?: Database["public"]["Enums"]["collection_status"]
+          title: string
+        }
+        Update: {
+          cover_artwork_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["collection_kind"]
+          monthly_price?: number
+          palette?: string[]
+          reveal?: Database["public"]["Enums"]["collection_reveal"]
+          slug?: string
+          source_gallery_id?: string | null
+          space_types?: string[]
+          status?: Database["public"]["Enums"]["collection_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collections_cover_artwork_id_fkey"
+            columns: ["cover_artwork_id"]
+            isOneToOne: false
+            referencedRelation: "artworks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_source_gallery_id_fkey"
+            columns: ["source_gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       galleries: {
         Row: {
           artist_id: string
@@ -249,6 +343,50 @@ export type Database = {
         }
         Relationships: []
       }
+      rental_requests: {
+        Row: {
+          accepted_terms_at: string
+          city: string | null
+          client_name: string
+          collection_id: string
+          company: string | null
+          created_at: string
+          email: string
+          end_date: string
+          folio: string
+          id: string
+          message: string | null
+          payment_frequency: Database["public"]["Enums"]["payment_frequency"]
+          period: unknown
+          phone: string | null
+          plan: Database["public"]["Enums"]["rental_plan"]
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          space_type: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["rental_status"]
+          terms_version: string
+        }
+        Insert: never
+        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "rental_requests_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rental_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_logs: {
         Row: {
           created_at: string
@@ -301,6 +439,44 @@ export type Database = {
         }
         Returns: undefined
       }
+      collection_availability: {
+        Args: { p_collection_id: string }
+        Returns: {
+          end_date: string
+          start_date: string
+          status: Database["public"]["Enums"]["rental_status"]
+        }[]
+      }
+      collection_item_count: {
+        Args: { p_collection_id: string }
+        Returns: number
+      }
+      collections_busy_now: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      request_rental: {
+        Args: {
+          p_accepted?: boolean
+          p_city?: string
+          p_client_name: string
+          p_collection_id: string
+          p_company?: string
+          p_email: string
+          p_frequency: Database["public"]["Enums"]["payment_frequency"]
+          p_message?: string
+          p_phone?: string
+          p_plan: Database["public"]["Enums"]["rental_plan"]
+          p_space_type?: string
+          p_start: string
+          p_terms_version?: string
+        }
+        Returns: string
+      }
+      review_rental_request: {
+        Args: { p_decision: string; p_id: string; p_notes?: string }
+        Returns: undefined
+      }
       set_primary_artwork_image: {
         Args: { p_artwork_id: string; p_image_id: string }
         Returns: undefined
@@ -316,6 +492,12 @@ export type Database = {
         | "rented"
         | "sold"
         | "retired"
+      collection_kind: "curated" | "artist"
+      collection_reveal: "mystery" | "open"
+      collection_status: "draft" | "published" | "retired"
+      payment_frequency: "monthly" | "quarterly" | "semiannual" | "annual" | "upfront"
+      rental_plan: "temporada" | "semestre" | "anual" | "anual_estacional"
+      rental_status: "pending" | "confirmed" | "declined" | "cancelled"
       review_decision: "approved" | "rejected"
       review_entity: "artist" | "artwork"
       review_status: "pending" | "approved" | "rejected"
