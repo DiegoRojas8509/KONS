@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 
 import { ArtworkCard } from "@/components/catalog/artwork-card"
+import { ArtImage } from "@/components/site/art-image"
 import { AvailabilityCalendar } from "@/components/catalog/availability-calendar"
 import { RentalRequestForm } from "@/components/catalog/rental-request-form"
 import { getAdvisorLinks } from "@/lib/contact"
@@ -32,13 +33,11 @@ async function CollectionDetail({ params }: { params: Promise<{ slug: string }> 
   return (
     <main className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:gap-16 lg:py-16">
       <div className="flex flex-col gap-10">
-        <div className="grid place-items-center bg-paper-2 p-4 sm:p-8">
+        <div className="relative aspect-[4/5] overflow-hidden bg-paper-2 lg:aspect-[5/6]">
           {collection.coverUrl ? (
-            // Short-lived signed URL: the Next image optimizer adds nothing here.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={collection.coverUrl} alt={`Portada de ${collection.title}`} className="max-h-[80vh] w-auto max-w-full object-contain" />
+            <ArtImage src={collection.coverUrl} alt={`Portada de ${collection.title}`} priority />
           ) : (
-            <div className="grid aspect-[4/5] w-full place-items-center font-mono text-xs uppercase tracking-[0.14em] text-ink-muted">Sin portada</div>
+            <div className="grid size-full place-items-center font-mono text-xs uppercase tracking-[0.14em] text-ink-muted">Sin portada</div>
           )}
         </div>
 

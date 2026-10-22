@@ -86,6 +86,9 @@ Si una tarea te lleva a tocar algo de esta lista, detente y pregunta.
 - **Contacto del catálogo:** botón "Solicitar informes" por enlace; canales en `NEXT_PUBLIC_CONTACT_WHATSAPP` y `NEXT_PUBLIC_CONTACT_EMAIL`. `NEXT_PUBLIC_SITE_URL` fija la URL del correo de confirmación.
 - **Pruebas manuales/e2e:** los usuarios de prueba se borran con la API admin; borra primero al operador de último (las claves `reviewed_by` lo referencian).
 
+- **Imágenes:** siempre WebP. Las que sube un artista se redimensionan (máx. 2000 px) y se convierten a WebP en el navegador antes de subir (`components/artist/artwork-images.tsx`); la demo se genera a 1800 px (`scripts/demo/prep.py`). Se pintan con `components/site/art-image.tsx` (decodificación asíncrona, lazy salvo la primera pantalla, aparición con fade). `lib/data/storage.ts` reutiliza las URLs firmadas ~45 min para que el navegador las cachee; `preconnect` a Supabase en el layout. Fuentes de demo (CC0): Met Open Access y Cleveland Museum of Art Open Access.
+- **Estilo editorial:** portadas a sangre (`object-cover`), nunca imagen pequeña en caja vacía; secciones con `SectionHeader`; el inicio es un tríptico de portadas reales con el nombre de la colección gigante.
+
 ### Convenciones
 - TypeScript estricto. Nada de `any`.
 - Tablas y columnas en Postgres: `snake_case`, en inglés.

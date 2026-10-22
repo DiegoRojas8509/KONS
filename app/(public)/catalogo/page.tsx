@@ -4,12 +4,18 @@ import { Suspense } from "react"
 
 import { CatalogFiltersForm } from "@/components/catalog/catalog-filters"
 import { CollectionCard } from "@/components/catalog/collection-card"
+import { SectionHeader } from "@/components/site/section-header"
 import { listPublicCollections } from "@/lib/data/collections-public"
 import { hasActiveFilters, parseCatalogFilters } from "@/lib/validations/catalog"
 
 export const metadata: Metadata = { title: "Catálogo · KONS" }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
+
+const GROUPS = [
+  { kind: "curated", title: "Selecciones KONS" },
+  { kind: "artist", title: "Galerías de artista" },
+] as const
 
 async function CatalogResults({ searchParams }: { searchParams: SearchParams }) {
   const filters = parseCatalogFilters(await searchParams)
@@ -33,16 +39,22 @@ async function CatalogResults({ searchParams }: { searchParams: SearchParams }) 
           )}
         </div>
       ) : (
-        <>
-          <p role="status" className="font-mono text-xs uppercase tracking-[0.14em] text-ink-muted">
-            {items.length} {items.length === 1 ? "colección" : "colecciones"} {filtered ? "con esos filtros" : ""}
-          </p>
-          <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item) => (
-              <CollectionCard key={item.id} item={item} />
-            ))}
-          </ul>
-        </>
+        <div className="flex flex-col gap-16">
+          {GROUPS.map(({ kind, title }) => {
+            const group = items.filter((i) => i.kind === kind)
+            if (group.length === 0) return null
+            return (
+              <section key={kind} aria-label={title} className="flex flex-col gap-8">
+                <SectionHeader title={title} count={group.length} />
+                <ul className="grid gap-x-5 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                  {group.map((item, i) => (
+                    <CollectionCard key={item.id} item={item} priority={kind === "curated" && i < 3} />
+                  ))}
+                </ul>
+              </section>
+            )
+          })}
+        </div>
       )}
     </>
   )

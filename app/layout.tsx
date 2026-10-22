@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { preconnect } from "react-dom"
 import { Anton, Inter, JetBrains_Mono } from "next/font/google"
 
 import "./globals.css"
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Images come from Supabase Storage: open that connection early.
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL) preconnect(process.env.NEXT_PUBLIC_SUPABASE_URL)
   return (
     <html lang="es" className={`${anton.variable} ${inter.variable} ${jetbrains.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">{children}</body>

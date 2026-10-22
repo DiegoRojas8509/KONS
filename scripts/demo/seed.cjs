@@ -6,7 +6,21 @@ const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUP
 const plan = JSON.parse(fs.readFileSync(`${D}/plan.json`))
 const slugify = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60)
 const state = { users: [], paths: [], works: [], collections: [] }
-const workByMet = new Map() // met object id -> artwork id
+const workByRef = new Map() // source ref ("met-123" / "cma-456") -> artwork id
+
+// Replaces a work's current image with its WebP version (idempotent: skipped when already WebP).
+async function reimage(aid, workId, w) {
+  const row = (await admin.from("artwork_images").select("id, storage_path").eq("artwork_id", workId).eq("is_primary", true).maybeSingle()).data
+  if (!row || row.storage_path.endsWith(".webp")) return
+  const path = `${aid}/${workId}/${crypto.randomUUID()}.webp`
+  const up = await admin.storage.from("artworks").upload(path, fs.readFileSync(w.file), { contentType: w.ctype, cacheControl: "31536000" })
+  if (up.error) throw new Error(`reimage upload ${w.title}: ${up.error.message}`)
+  const upd = await admin.from("artwork_images").update({ storage_path: path }).eq("id", row.id)
+  if (upd.error) throw new Error(`reimage row ${w.title}: ${upd.error.message}`)
+  await admin.storage.from("artworks").remove([row.storage_path])
+  state.paths.push(path)
+  process.stdout.write("~")
+}
 
 async function main() {
   const artistIds = {}, galleryIds = {}
@@ -40,7 +54,13 @@ async function main() {
   for (const w of plan.works) {
     const aid = artistIds[w.artist]
     const exists = (await admin.from("artworks").select("id").eq("artist_id", aid).eq("title", w.title).maybeSingle()).data
-    if (exists) { state.works.push(exists.id); workByMet.set(w.met_id, exists.id); i++; continue }
+    if (exists) {
+      state.works.push(exists.id)
+      workByRef.set(w.ref, exists.id)
+      await reimage(aid, exists.id, w)
+      i++
+      continue
+    }
     const row = {
       artist_id: aid, gallery_id: galleryIds[w.artist][w.gallery], title: w.title, technique: w.technique, year: w.year,
       width_cm: w.width_cm, height_cm: w.height_cm, dominant_palette: w.palette, recommended_spaces: w.spaces,
@@ -49,14 +69,14 @@ async function main() {
     }
     const ins = await admin.from("artworks").insert(row).select("id, orientation").single()
     if (ins.error) throw new Error(`artwork ${w.title}: ${ins.error.message}`)
-    const path = `${aid}/${ins.data.id}/${crypto.randomUUID()}.jpg`
-    const up = await admin.storage.from("artworks").upload(path, fs.readFileSync(w.file), { contentType: w.ctype })
+    const path = `${aid}/${ins.data.id}/${crypto.randomUUID()}.webp`
+    const up = await admin.storage.from("artworks").upload(path, fs.readFileSync(w.file), { contentType: w.ctype, cacheControl: "31536000" })
     if (up.error) throw new Error(`upload ${w.title}: ${up.error.message}`)
     state.paths.push(path)
     const img = await admin.from("artwork_images").insert({ artwork_id: ins.data.id, storage_path: path, is_primary: true })
     if (img.error) throw new Error(`image row ${w.title}: ${img.error.message}`)
     state.works.push(ins.data.id)
-    workByMet.set(w.met_id, ins.data.id)
+    workByRef.set(w.ref, ins.data.id)
     i++
     process.stdout.write(".")
   }
@@ -69,9 +89,11 @@ async function main() {
 
 // ---- collections (Selecciones KONS in mystery mode + each artist gallery as an open collection) and two sample rentals
 const CURATED = [
-  { title: "Lobby cálido", reveal: "mystery", price: 3500, spaces: ["lobby", "recepción"], palette: ["tierra", "cálidos"], met: [11126, 438551, 436021, 436451] },
-  { title: "Oficina serena", reveal: "mystery", price: 2800, spaces: ["oficina", "sala de juntas"], palette: ["neutros", "azules"], met: [436005, 436594, 436595, 436229, 283336] },
-  { title: "Restaurante terroso", reveal: "mystery", price: 2200, spaces: ["restaurante", "comedor"], palette: ["tierra", "ocre"], met: [436305, 10996, 436450, 10476, 816523] },
+  { title: "Lobby cálido", reveal: "mystery", price: 3500, spaces: ["lobby", "recepción"], palette: ["tierra", "cálidos"], met: ["met-11126", "met-438551", "met-436021", "met-436451"] },
+  { title: "Oficina serena", reveal: "mystery", price: 2800, spaces: ["oficina", "sala de juntas"], palette: ["neutros", "azules"], met: ["met-436005", "met-436594", "met-436595", "met-436229", "met-283336"] },
+  { title: "Restaurante terroso", reveal: "mystery", price: 2200, spaces: ["restaurante", "comedor"], palette: ["tierra", "ocre"], met: ["met-436305", "met-10996", "met-436450", "met-10476", "met-816523"] },
+  { title: "Sala de juntas moderna", reveal: "mystery", price: 4200, spaces: ["sala de juntas", "oficina"], palette: ["neutros", "tierra"], met: ["cma-143278", "cma-98215", "cma-136510", "cma-715339"] },
+  { title: "Rostros", reveal: "open", price: 3000, spaces: ["recepción", "sala", "habitación"], palette: ["tierra", "neutros"], met: ["cma-150694", "cma-144976", "cma-154286"] },
 ]
 const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10)
 const top = (lists) => {
@@ -100,7 +122,7 @@ async function seedCollections(artistIds, galleryIds) {
   const byTitle = {}
 
   for (const c of CURATED) {
-    const ids = c.met.map((m) => workByMet.get(m)).filter(Boolean)
+    const ids = c.met.map((m) => workByRef.get(m)).filter(Boolean)
     ids.forEach((id) => taken.add(id))
     byTitle[c.title] = await ensureCollection(
       { title: c.title, slug: slugify(c.title), kind: "curated", reveal: c.reveal, space_types: c.spaces, palette: c.palette, monthly_price: c.price, created_by: operator.id },
@@ -110,15 +132,23 @@ async function seedCollections(artistIds, galleryIds) {
 
   for (const a of plan.artists) {
     for (const [gi, [title]] of a.galleries.entries()) {
-      const works = plan.works.filter((w) => w.artist === a.slug && w.gallery === gi && !taken.has(workByMet.get(w.met_id)))
+      const works = plan.works.filter((w) => w.artist === a.slug && w.gallery === gi && !taken.has(workByRef.get(w.ref)))
       if (works.length === 0) continue
-      const ids = works.map((w) => workByMet.get(w.met_id))
+      const ids = works.map((w) => workByRef.get(w.ref))
       const price = Math.max(50, Math.round(works.reduce((sum, w) => sum + w.monthly_rent, 0) / 50) * 50)
       const full = `${title} · ${a.name}`.slice(0, 80)
-      await ensureCollection(
+      const colId = await ensureCollection(
         { title: full, slug: slugify(full), kind: "artist", reveal: "open", space_types: top(works.map((w) => w.spaces)), palette: top(works.map((w) => w.palette)), monthly_price: price, created_by: operator.id },
         ids,
       )
+      // top up with works added later (the collection may already exist)
+      const have = new Set((await admin.from("collection_items").select("artwork_id").eq("collection_id", colId)).data?.map((i) => i.artwork_id))
+      const missing = ids.filter((id) => !have.has(id))
+      if (missing.length) {
+        const { count } = await admin.from("collection_items").select("artwork_id", { count: "exact", head: true }).eq("collection_id", colId)
+        const ins = await admin.from("collection_items").insert(missing.map((artwork_id, k) => ({ collection_id: colId, artwork_id, position: (count ?? 0) + k })))
+        if (ins.error) throw new Error(`top-up ${full}: ${ins.error.message}`)
+      }
     }
   }
 

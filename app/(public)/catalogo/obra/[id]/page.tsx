@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { Suspense } from "react"
 import { z } from "zod"
 
+import { ArtImage } from "@/components/site/art-image"
 import { getPublicArtwork } from "@/lib/data/public-artwork"
 import { formatOrientation, formatSize } from "@/lib/format"
 
@@ -48,13 +49,13 @@ async function ArtworkDetail({ params }: { params: Promise<{ id: string }> }) {
           </div>
         ) : (
           artwork.images.map((image, i) => (
-            <div key={image.id} className="grid place-items-center bg-paper-2 p-4 sm:p-8">
-              {/* Short-lived signed URL: the Next image optimizer adds nothing here. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div key={image.id} className="grid place-items-center bg-paper-2">
+              <ArtImage
                 src={image.url}
                 alt={i === 0 ? `${artwork.title}, de ${artwork.artist.display_name}` : `${artwork.title}, vista ${i + 1}`}
-                className="max-h-[80vh] w-auto max-w-full object-contain"
+                fit="contain"
+                priority={i === 0}
+                className="max-h-[85vh] !size-auto max-w-full"
               />
             </div>
           ))

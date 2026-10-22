@@ -17,6 +17,28 @@ import { MAX_IMAGES_PER_ARTWORK } from "@/lib/validations/artwork-images"
 
 type Props = { artworkId: string; images: ArtworkImageView[]; editable: boolean }
 
+const MAX_SIDE = 2000
+
+// Optimizes a photo in the browser before uploading: resized to MAX_SIDE and re-encoded as WebP. Phone photos of 6-10 MB
+// become a few hundred KB, so they pass the size limit and the catalog loads fast. Falls back to the original file.
+async function toWebp(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement("canvas")
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close()
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.85))
+    if (!blob || blob.type !== "image/webp") return file
+    if (file.type === "image/webp" && blob.size >= file.size) return file
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, { type: "image/webp" })
+  } catch {
+    return file
+  }
+}
+
 export function ArtworkImages({ artworkId, images, editable }: Props) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -26,11 +48,12 @@ export function ArtworkImages({ artworkId, images, editable }: Props) {
   const busy = uploading || pending
 
   async function onFilesSelected(fileList: FileList | null) {
-    const files = Array.from(fileList ?? [])
-    if (files.length === 0) return
+    const picked = Array.from(fileList ?? [])
+    if (picked.length === 0) return
     setError(null)
     setUploading(true)
     try {
+      const files = await Promise.all(picked.map(toWebp))
       const prepared = await prepareImageUploads({
         artworkId,
         files: files.map((f) => ({ type: f.type, size: f.size })),
@@ -43,6 +66,7 @@ export function ArtworkImages({ artworkId, images, editable }: Props) {
       for (const [i, ticket] of prepared.tickets.entries()) {
         const { error: uploadError } = await storage.uploadToSignedUrl(ticket.path, ticket.token, files[i], {
           contentType: files[i].type,
+          cacheControl: "31536000", // the path is unique per upload, so the file can be cached for a year
         })
         if (uploadError) {
           failed = true
@@ -135,7 +159,7 @@ export function ArtworkImages({ artworkId, images, editable }: Props) {
             className="text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            JPG, PNG o WebP, máximo 5 MB cada una y {MAX_IMAGES_PER_ARTWORK} por obra. La primera que subas será la principal.
+            JPG, PNG o WebP, {MAX_IMAGES_PER_ARTWORK} por obra como máximo; se optimizan al subirlas. La primera será la principal.
           </p>
           {uploading && <p role="status" className="text-sm">Subiendo…</p>}
         </div>
