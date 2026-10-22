@@ -2,41 +2,53 @@ import Link from "next/link"
 import { Suspense } from "react"
 
 import { HomeHero } from "@/components/home/home-hero"
-import { listCatalog } from "@/lib/data/catalog"
+import { PLANS, PLAN_IDS, planSummary } from "@/lib/constants/plans"
+import { getAdvisorLinks } from "@/lib/contact"
+import { listPublicCollections } from "@/lib/data/collections-public"
 
 const mono = "font-mono text-xs uppercase tracking-[0.14em]"
+const button =
+  "inline-flex h-12 items-center px-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
 
 async function Hero() {
-  const items = await listCatalog()
+  const items = await listPublicCollections()
   return <HomeHero items={items} />
 }
 
 export default function HomePage() {
+  const advisor = getAdvisorLinks()
+  const advisorHref = advisor.whatsapp ?? advisor.email
+
   return (
     <main>
-      <Suspense fallback={<section aria-hidden className="min-h-[calc(100svh-5.5rem)]" />}>
+      <Suspense fallback={<section aria-hidden className="min-h-[34rem] md:min-h-[calc(100svh-5.5rem)]" />}>
         <Hero />
       </Suspense>
 
-      <section className="border-t border-border">
-        <div className="mx-auto grid w-full max-w-7xl md:grid-cols-2">
-          <div className="flex flex-col items-start gap-5 px-5 py-14 sm:px-8 md:py-20">
-            <p className={`${mono} text-ink-muted`}>Para tu espacio</p>
-            <h2 className="text-3xl font-medium leading-tight sm:text-4xl">Renovamos tu espacio.</h2>
-            <Link
-              href="/catalogo"
-              className={`${mono} inline-flex h-12 items-center bg-ink px-6 text-paper hover:bg-ink/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink`}
-            >
-              Ver el catálogo
+      <section aria-labelledby="plans-title" className="border-t border-border">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-14 sm:px-8 md:py-20">
+          <h2 id="plans-title" className={`${mono} text-ink-muted`}>
+            Planes
+          </h2>
+          <ul className="grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {PLAN_IDS.map((id) => (
+              <li key={id} className="flex flex-col gap-3 bg-paper p-5">
+                <p className="font-display text-3xl uppercase leading-none">{PLANS[id].label}</p>
+                <p className="font-mono text-xs uppercase leading-relaxed tracking-[0.1em] text-ink-muted">{planSummary(id)}</p>
+                {PLANS[id].discount > 0 && <p className="font-mono text-sm">−{Math.round(PLANS[id].discount * 100)} %</p>}
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/catalogo" className={`${mono} ${button} bg-ink text-paper hover:bg-ink/85`}>
+              Ver colecciones
             </Link>
-          </div>
-          <div className="flex flex-col items-start gap-5 bg-paper-2 px-5 py-14 sm:px-8 md:py-20">
-            <p className={`${mono} text-ink-muted`}>Para artistas</p>
-            <h2 className="text-3xl font-medium leading-tight sm:text-4xl">Tu obra, a la vista todos los días.</h2>
-            <Link
-              href="/registro"
-              className={`${mono} inline-flex h-12 items-center border border-ink px-6 hover:bg-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink`}
-            >
+            {advisorHref && (
+              <a href={advisorHref} target={advisor.whatsapp ? "_blank" : undefined} rel="noopener noreferrer" className={`${mono} ${button} border border-ink hover:bg-paper-2`}>
+                Hablar con un asesor
+              </a>
+            )}
+            <Link href="/registro" className={`${mono} underline underline-offset-8`}>
               Soy artista
             </Link>
           </div>

@@ -5,8 +5,7 @@ import { Suspense } from "react"
 import { z } from "zod"
 
 import { getPublicArtwork } from "@/lib/data/public-artwork"
-import { getContactLinks } from "@/lib/contact"
-import { formatMoney, formatOrientation, formatSize } from "@/lib/format"
+import { formatOrientation, formatSize } from "@/lib/format"
 
 const idSchema = z.string().uuid()
 
@@ -38,7 +37,6 @@ async function ArtworkDetail({ params }: { params: Promise<{ id: string }> }) {
   const artwork = await getPublicArtwork(id)
   if (!artwork) notFound()
 
-  const contact = getContactLinks(artwork.title, artwork.artist.display_name)
   const instagram = artwork.artist.instagram
 
   return (
@@ -66,30 +64,17 @@ async function ArtworkDetail({ params }: { params: Promise<{ id: string }> }) {
       <div className="flex flex-col gap-8 lg:sticky lg:top-8 lg:self-start">
         <div className="flex flex-col gap-3">
           <Link href="/catalogo" className="font-mono text-xs uppercase tracking-[0.14em] text-ink-muted underline-offset-8 hover:underline">
-            ← Catálogo
+            ← Colecciones
           </Link>
           <h1 className="font-display text-5xl uppercase leading-[0.95] sm:text-6xl">{artwork.title}</h1>
           <p className="text-lg">{artwork.artist.display_name}</p>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <p className="font-mono text-2xl">
-            {formatMoney(artwork.monthly_rent)} <span className="text-base text-ink-muted">/ mes</span>
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {contact.whatsapp && (
-            <a href={contact.whatsapp} target="_blank" rel="noopener noreferrer" className={`${cta} bg-ink text-paper hover:bg-ink/85`}>
-              Solicitar informes por WhatsApp
-            </a>
-          )}
-          {contact.email && (
-            <a href={contact.email} className={`${cta} ${contact.whatsapp ? "border border-ink hover:bg-paper-2" : "bg-ink text-paper hover:bg-ink/85"}`}>
-              Solicitar informes por correo
-            </a>
-          )}
-        </div>
+        {artwork.collection && (
+          <Link href={`/catalogo/${artwork.collection.slug}`} className={`${cta} bg-ink text-paper hover:bg-ink/85`}>
+            Rentar la colección
+          </Link>
+        )}
 
         <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
           <Spec label="Medidas">{formatSize(artwork.width_cm, artwork.height_cm, artwork.depth_cm)}</Spec>

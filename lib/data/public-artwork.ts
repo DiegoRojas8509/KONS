@@ -18,6 +18,7 @@ export type PublicArtwork = {
   monthly_rent: number
   artist: { display_name: string; bio: string | null; statement: string | null; city: string | null; instagram: string | null }
   images: { id: string; url: string }[]
+  collection: { slug: string; title: string } | null
 }
 
 // Public read: anon only sees approved works, a fixed column set (no sale_price) and approved artists' public fields.
@@ -45,10 +46,14 @@ export const getPublicArtwork = cache(async (id: string): Promise<PublicArtwork 
     (rows ?? []).map((r) => r.storage_path),
   )
 
+  // Readable only when the work belongs to a published OPEN collection (RLS).
+  const { data: holder } = await supabase.from("collection_items").select("collections(slug, title)").eq("artwork_id", id).maybeSingle()
+
   const { artists, ...artwork } = data
   return {
     ...artwork,
     artist: artists,
+    collection: holder?.collections ?? null,
     images: (rows ?? []).flatMap((r) => {
       const url = urlByPath.get(r.storage_path)
       return url ? [{ id: r.id, url }] : []
