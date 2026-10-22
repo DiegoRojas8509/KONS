@@ -22,11 +22,7 @@ export default function HomePage() {
         <div className="mx-auto grid w-full max-w-7xl md:grid-cols-2">
           <div className="flex flex-col items-start gap-5 px-5 py-14 sm:px-8 md:py-20">
             <p className={`${mono} text-ink-muted`}>Para tu espacio</p>
-            <h2 className="text-3xl font-medium leading-tight sm:text-4xl">Renovamos tu arte.</h2>
-            <p className="max-w-md text-lg text-ink-muted">
-              Oficinas, hoteles, restaurantes y eventos rentan una obra original por 3 a 6 meses. Cuando termina el periodo, el
-              espacio se renueva.
-            </p>
+            <h2 className="text-3xl font-medium leading-tight sm:text-4xl">Renovamos tu espacio.</h2>
             <Link
               href="/catalogo"
               className={`${mono} inline-flex h-12 items-center bg-ink px-6 text-paper hover:bg-ink/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink`}
@@ -37,10 +33,6 @@ export default function HomePage() {
           <div className="flex flex-col items-start gap-5 bg-paper-2 px-5 py-14 sm:px-8 md:py-20">
             <p className={`${mono} text-ink-muted`}>Para artistas</p>
             <h2 className="text-3xl font-medium leading-tight sm:text-4xl">Tu obra, a la vista todos los días.</h2>
-            <p className="max-w-md text-lg text-ink-muted">
-              Tu trabajo vive en lugares con flujo constante de gente y recibes una comisión por cada renta. Revisamos cada
-              solicitud para mantener la colección curada.
-            </p>
             <Link
               href="/registro"
               className={`${mono} inline-flex h-12 items-center border border-ink px-6 hover:bg-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink`}

@@ -9,8 +9,8 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] })
 const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: { default: "KONS · Arte original en renta", template: "%s" },
-  description: "Arte original de artistas emergentes en renta para negocios, oficinas, hoteles y eventos. Tu espacio se renueva cada pocos meses.",
+  title: { default: "KONS", template: "%s" },
+  description: "Renovamos tu espacio con arte original.",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

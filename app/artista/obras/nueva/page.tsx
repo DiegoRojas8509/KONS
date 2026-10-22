@@ -16,7 +16,6 @@ export default async function NewArtworkPage() {
           ← Mis obras
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Nueva obra</h1>
-        <p className="text-sm text-muted-foreground">Se guarda como borrador. Podrás agregar imágenes y enviarla a revisión después.</p>
       </div>
       <ArtworkForm galleries={galleries.map((g) => ({ id: g.id, title: g.title }))} />
     </main>

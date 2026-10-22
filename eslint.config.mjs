@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     ".next.nosync/**",
+    // Node CLI scripts (demo seed), not part of the app.
+    "scripts/**",
     "*.nosync/**",
     "out/**",
     "build/**",

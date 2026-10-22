@@ -15,7 +15,6 @@ export default async function GalleriesPage() {
           ← Volver al panel
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight">Mis galerías</h1>
-        <p className="text-muted-foreground">Agrupa tu obra en colecciones.</p>
       </div>
       <Link href="/artista/galerias/nueva" className="underline underline-offset-4">
         Crear galería

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!artwork) return { title: "Obra no encontrada · KONS" }
   return {
     title: `${artwork.title}, ${artwork.artist.display_name} · KONS`,
-    description: `${artwork.title}, de ${artwork.artist.display_name}. ${formatSize(artwork.width_cm, artwork.height_cm)}. En renta por 3 a 6 meses.`,
+    description: `${artwork.title}, de ${artwork.artist.display_name}. ${formatSize(artwork.width_cm, artwork.height_cm)}.`,
   }
 }
 
@@ -76,7 +76,6 @@ async function ArtworkDetail({ params }: { params: Promise<{ id: string }> }) {
           <p className="font-mono text-2xl">
             {formatMoney(artwork.monthly_rent)} <span className="text-base text-ink-muted">/ mes</span>
           </p>
-          <p className="text-sm text-ink-muted">Se renta por periodos de 3 a 6 meses, con pago mensual.</p>
         </div>
 
         <div className="flex flex-col gap-3">
@@ -90,7 +89,6 @@ async function ArtworkDetail({ params }: { params: Promise<{ id: string }> }) {
               Solicitar informes por correo
             </a>
           )}
-          {!contact.whatsapp && !contact.email && <p className="text-sm text-ink-muted">Pronto podrás solicitar informes desde aquí.</p>}
         </div>
 
         <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">

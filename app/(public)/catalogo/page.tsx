@@ -7,10 +7,7 @@ import { CatalogFiltersForm } from "@/components/catalog/catalog-filters"
 import { listCatalog } from "@/lib/data/catalog"
 import { hasActiveFilters, parseCatalogFilters } from "@/lib/validations/catalog"
 
-export const metadata: Metadata = {
-  title: "Catálogo · KONS",
-  description: "Obras originales disponibles en renta por 3 a 6 meses, pensadas para tu espacio.",
-}
+export const metadata: Metadata = { title: "Catálogo · KONS" }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
@@ -33,7 +30,7 @@ async function CatalogResults({ searchParams }: { searchParams: SearchParams }) 
             </>
           ) : (
             <>
-              <p className="max-w-md text-lg">Todavía no hay obras disponibles. Estamos curando la primera colección.</p>
+              <p className="max-w-md text-lg">Aún no hay obras disponibles.</p>
               <Link href="/registro" className="font-mono text-xs uppercase tracking-[0.14em] underline underline-offset-8">
                 Soy artista: quiero exhibir
               </Link>
@@ -61,9 +58,6 @@ export default function CatalogPage({ searchParams }: { searchParams: SearchPara
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-5 py-12 sm:px-8 sm:py-16">
       <div className="flex flex-col gap-3">
         <h1 className="font-display text-6xl uppercase leading-[0.9] tracking-tight sm:text-8xl">Catálogo</h1>
-        <p className="max-w-xl text-lg text-ink-muted">
-          Arte original en renta por 3 a 6 meses. Cuando termina el periodo, tu espacio se renueva.
-        </p>
       </div>
       <Suspense fallback={<p className="font-mono text-xs uppercase tracking-[0.14em] text-ink-muted">Cargando obras…</p>}>
         <CatalogResults searchParams={searchParams} />

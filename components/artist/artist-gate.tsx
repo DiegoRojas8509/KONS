@@ -30,10 +30,7 @@ export async function ArtistGate({ children }: { children: ReactNode }) {
   if (artist.status === "pending") {
     return (
       <Screen title="Tu cuenta está en revisión">
-        <p className="text-muted-foreground">
-          Gracias, {artist.display_name}. Revisamos a cada artista antes de que pueda publicar obra. Vuelve a entrar
-          más tarde para ver el resultado.
-        </p>
+        <p className="text-muted-foreground">Gracias, {artist.display_name}. Vuelve a entrar más tarde para ver el resultado.</p>
       </Screen>
     )
   }

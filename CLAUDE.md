@@ -279,6 +279,9 @@ Referencias en `docs/referencias/`:
 
 Reglas: un solo acento (no agregar otros colores de marca); los estados de revisión (`pending`/`approved`/`rejected`) se distinguen con texto e ícono, no con semáforo de colores saturados.
 
+### Copy
+Sin frases que expliquen qué hace la app ni propuesta de valor en párrafos: solo un eslogan ("Renovamos tu espacio"), etiquetas funcionales y datos básicos. Los mensajes de estado y de error van al mínimo.
+
 ### Tipografía (confirmada)
 - Display condensada bold para el nombre gigante (*Anton*, Google Fonts).
 - Grotesca para texto y cifras grandes (*Inter*).

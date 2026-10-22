@@ -27,7 +27,7 @@ export function HomeHero({ items }: { items: CatalogItem[] }) {
   const lead = items.find((i) => i.imageUrl) ?? null
   const thumbs = items.filter((i) => i.id !== lead?.id && i.imageUrl).slice(0, 2)
 
-  const headline = lead ? lead.artist_name : "Renovamos tu arte"
+  const headline = lead ? lead.artist_name : "Renovamos tu espacio"
   // Anton is ~0.42em per capital: this makes the name span about the full width, within sane bounds.
   const size = Math.max(8, Math.min(34, 214 / Math.max(headline.length, 1)))
 
@@ -51,7 +51,7 @@ export function HomeHero({ items }: { items: CatalogItem[] }) {
             <img src={lead.imageUrl ?? ""} alt={`${lead.title}, de ${lead.artist_name}`} className="size-full object-contain p-3" />
           </Link>
         ) : (
-          <p className="max-w-sm pb-10 text-center text-lg">Arte original de artistas emergentes, en renta por 3 a 6 meses.</p>
+          <div className="pb-10" />
         )}
       </div>
 
