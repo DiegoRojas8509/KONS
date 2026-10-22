@@ -25,12 +25,14 @@ function Thumb({ item, className }: { item: CatalogCollection; className: string
 // mono metadata, and the collection's name in giant condensed type that fills the width, bleeds off the bottom and is
 // overlapped by its cover. Lettering is sized in vw so the overlap stays proportional at any screen width.
 export function HomeHero({ items }: { items: CatalogCollection[] }) {
-  const lead = items.find((i) => i.coverUrl) ?? null
+  // A curated selection leads when there is one: its name is short and made for display.
+  const lead = items.find((i) => i.kind === "curated" && i.coverUrl) ?? items.find((i) => i.coverUrl) ?? null
   const thumbs = items.filter((i) => i.id !== lead?.id && i.coverUrl).slice(0, 2)
 
-  const headline = lead ? lead.title : "Renovamos tu espacio"
+  // Artist galleries are titled "Gallery · Artist": the giant lettering uses the short part only.
+  const headline = lead ? lead.title.split(" · ")[0] : "Renovamos tu espacio"
   // Anton is ~0.42em per capital: this makes the name span about the full width, within sane bounds.
-  const size = Math.max(8, Math.min(34, 214 / Math.max(headline.length, 1)))
+  const size = Math.max(6, Math.min(34, 214 / Math.max(headline.length, 1)))
 
   return (
     <section

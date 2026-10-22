@@ -22,9 +22,14 @@ Jira (proyecto SCRUM, cloudId `a041504c-13ff-43b6-bb4c-071dff22a0db`) es parte d
 
 Plataforma curada que conecta a una comunidad curada de **artistas emergentes** con **negocios, oficinas, hoteles, restaurantes y organizadores de eventos** que necesitan arte original en sus espacios.
 
-El modelo principal es **renta por periodos de 3 a 6 meses con pago mensual**, no la venta. La propuesta de valor al cliente es *"renovamos tu arte"*: el espacio no se queda estático, la decoración rota y el lugar se mantiene atractivo.
+El servicio es **renta de colecciones completas para espacios** (oficinas, restaurantes, hoteles), no un marketplace de obras. El eslogan es *"Renovamos tu espacio"*. El cliente nunca renta obras sueltas:
+- **Selección KONS**: colección curada por el operador, normalmente en **modo sorpresa** (se ve la portada, el ambiente y los atributos; el resto se descubre al recibirla).
+- **Galería de artista**: la galería de un artista convertida en colección **abierta** (se ven todas sus obras).
+- Una obra pertenece a **una sola colección** (exclusividad) y cada colección tiene disponibilidad por fechas: libre, en revisión u ocupada.
+- **Planes** (`lib/constants/plans.ts`, mismas reglas en la base): Temporada (4 meses, 1 colección), Semestre (6 meses, rota cada 3), Anual (12 meses, rota cada 4) y Anual estacional (12 meses, rota cada 3). Pago mensual, trimestral, semestral, anual o por adelantado según el plan. Descuento por plan: 0 / 5 / 10 / 12 %.
+- Contratación en la beta: **solicitud + asesor**. El visitante elige colección, plan, frecuencia de pago y fecha de inicio, deja sus datos y acepta los términos (`/terminos`, borrador pendiente de revisión legal). La solicitud aparta el **primer bloque** del plan como "en revisión"; el operador la confirma o libera con nota; las rotaciones siguientes las asigna el asesor a mano. Sin cuenta de cliente y sin pago en línea.
 
-La compra existe pero **no se promueve**: se ofrece solo cuando el cliente ya rentó una pieza y pregunta por ella. Nunca la pongas como llamada a la acción principal en la interfaz.
+La compra existe pero **no se promueve**: se ofrece solo cuando el cliente ya rentó una pieza y pregunta por ella. Nunca la pongas en la interfaz.
 
 Para el artista la promesa no es ingreso pasivo, es **exposición permanente**: su obra vive en lugares con flujo constante de gente, y además cobra comisión.
 
@@ -45,14 +50,16 @@ Es una plataforma **curada**, no un marketplace abierto. **Navegar el catálogo 
 5. Alta de obras con ficha completa y carga de imágenes
 6. Las obras entran en `pending_review` y requieren aprobación del operador
 7. Panel de operador: lista de artistas y obras pendientes, aprobar / rechazar con nota
-8. Inicio y catálogo públicos (sin sesión): solo obras `approved` son visibles
+8. Inicio y catálogo públicos (sin sesión): el catálogo lista **colecciones** publicadas; las obras `approved` solo se ven dentro de colecciones abiertas
+9. Colecciones: el operador crea Selecciones KONS y convierte galerías de artista en colecciones abiertas; publica, retira, elige portada
+10. Solicitud de renta pública (plan, frecuencia de pago, fechas, términos) con calendario de disponibilidad de 12 meses y bandeja de solicitudes del operador (confirmar o liberar)
 
 ### No se construye todavía (Sprint 2+)
 No escribas código de esto. Déjalo documentado y stubbed si hace falta:
 - Pasarela de pago y cobro recurrente
 - Reparto automático de comisión al artista
-- Contratos, colocaciones y calendario de rotaciones
-- Portal del cliente y solicitud de cotización
+- Contratos firmados, colocaciones y calendario de rotaciones automático (hoy el asesor asigna las rotaciones)
+- Portal del cliente con cuenta, historial y renovaciones
 - Visualizador de obra sobre muro
 - QR público por obra
 - Portal de interioristas / aliados
@@ -161,6 +168,21 @@ review_logs
   created_at  timestamptz
 ```
 
+### Colecciones y solicitudes de renta (migración `20261022100000_collections_and_rentals.sql`)
+```sql
+collections        id, title, slug unique, description, kind enum('curated','artist'), reveal enum('mystery','open'),
+                   source_gallery_id, cover_artwork_id, space_types text[], palette text[], monthly_price,
+                   status enum('draft','published','retired'), created_by, created_at
+collection_items   collection_id, artwork_id UNIQUE (una obra, una colección), position
+rental_requests    id, folio, collection_id, plan, payment_frequency, start_date, end_date, period (daterange generado),
+                   client_name, company, email, phone, space_type, city, message, terms_version, accepted_terms_at,
+                   status enum('pending','confirmed','declined','cancelled'), reviewed_by, reviewed_at, review_notes
+```
+- **Restricción de exclusión** (`btree_gist`): dos solicitudes `pending|confirmed` no pueden traslapar fechas en la misma colección (error `23P01`).
+- RPC: `request_rental` (público, SECURITY DEFINER: valida términos, plan/frecuencia, fecha, límite de 5 solicitudes por correo al día), `collection_availability` y `collection_item_count` y `collections_busy_now` (públicas, sin datos personales), `review_rental_request` (solo operador, nota al liberar).
+- RLS: `anon` lee colecciones **publicadas** (sin `created_by`) y los items solo de colecciones **abiertas**; las `mystery` no exponen sus obras. `rental_requests` solo la lee el operador. Escribe colecciones e items solo el operador (y solo obras `approved`).
+- Las obras individuales no se rentan: `monthly_rent` por obra queda como referencia interna del operador.
+
 ### Decisiones de diseño que debes respetar
 - **`orientation` se calcula de las medidas**, no lo captura el artista.
 - **Una obra nunca se borra**, se marca `retired`. El historial importa.
@@ -195,15 +217,18 @@ Escribe las políticas RLS en la misma migración que la tabla. No dejes tablas 
 5. Ve el estado de cada obra y el motivo de rechazo si aplica
 
 ### Operador
-1. Bandeja con dos pestañas: artistas pendientes y obras pendientes
-2. Abre el detalle, aprueba o rechaza con nota obligatoria en el rechazo
-3. Se registra en `review_logs`
+1. Bandeja con tres pestañas: artistas pendientes, obras pendientes y **solicitudes de renta**
+2. Abre el detalle, aprueba o rechaza con nota obligatoria en el rechazo; en las solicitudes de renta, confirma o libera las fechas (nota al liberar)
+3. Se registra en `review_logs` (artistas y obras) y en `rental_requests` (rentas)
+4. `/operador/colecciones`: crea Selecciones KONS, agrega o quita obras aprobadas libres, elige portada, publica o retira, y convierte galerías de artista en colecciones abiertas
 
-### Inicio y catálogo públicos (lectura, Sprint 1, sin sesión)
-El **inicio** (`/`) es una portada pública con el layout de la sección 10. El cliente navega sin cuenta; el botón de contacto del detalle abre WhatsApp o correo (sin formulario, la cotización es Sprint 2).
-Listado de obras aprobadas con filtros por: orientación, rango de medidas, paleta, tipo de espacio recomendado y rango de renta mensual.
+### Inicio, catálogo y solicitud de renta (públicos, sin sesión)
+- **Inicio** (`/`): portada con el layout de la sección 10; la colección destacada (prefiere una Selección KONS) es la protagonista, y debajo van los cuatro planes y los accesos (colecciones, asesor, "Soy artista").
+- **Catálogo** (`/catalogo`): colecciones, primero las Selecciones KONS. Filtros: espacio, paleta y rango de precio mensual (en la URL).
+- **Colección** (`/catalogo/[slug]`): calendario de 12 meses (libre / en revisión / ocupada, siempre con texto), formulario de solicitud con aceptación de términos y honeypot, y, si es abierta, sus obras (`/catalogo/obra/[id]`, sin precio ni compra).
+- Contacto con un asesor por WhatsApp o correo (`NEXT_PUBLIC_CONTACT_*`) además del formulario.
 
-**Los filtros se piensan desde quien decora, no desde el arte.** Nadie busca "expresionismo", buscan "algo horizontal de 1.80 m en tonos tierra para un lobby".
+**Los filtros se piensan desde quien decora, no desde el arte.**
 
 ---
 
@@ -213,9 +238,10 @@ Listado de obras aprobadas con filtros por: orientación, rango de medidas, pale
 /app
   /(auth)/login, /registro
   /artista          -> panel del artista
-  /operador         -> bandeja de revisión
-  /page.tsx         -> inicio público
-  /catalogo         -> listado + filtros (público)
+  /operador         -> bandeja de revisión (artistas, obras, rentas), /colecciones, /rentas/[id]
+  /(public)/page.tsx -> inicio
+  /(public)/catalogo -> colecciones + filtros, /[slug] colección, /obra/[id] obra
+  /(public)/terminos -> términos y condiciones (borrador)
 /components
   /ui               -> shadcn
   /artwork, /artist

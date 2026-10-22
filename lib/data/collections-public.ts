@@ -46,7 +46,8 @@ export async function listPublicCollections(filters: CatalogFilters = EMPTY_FILT
   if (filters.palettes.length > 0) query = query.overlaps("palette", filters.palettes)
   if (filters.priceMin !== undefined) query = query.gte("monthly_price", filters.priceMin)
   if (filters.priceMax !== undefined) query = query.lte("monthly_price", filters.priceMax)
-  const { data } = await query.order("created_at", { ascending: false })
+  // Curated selections first (enum order: curated < artist), newest first inside each kind.
+  const { data } = await query.order("kind", { ascending: true }).order("created_at", { ascending: false })
   const rows = data ?? []
 
   const [covers, busy, counts] = await Promise.all([

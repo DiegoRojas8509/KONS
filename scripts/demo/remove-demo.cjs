@@ -7,12 +7,15 @@ async function main() {
   const uids = (users ?? []).map((u) => u.id)
   const aids = (await admin.from("artists").select("id").in("profile_id", uids)).data?.map((a) => a.id) ?? []
   const works = (await admin.from("artworks").select("id").in("artist_id", aids)).data?.map((w) => w.id) ?? []
+  const colIds = [...new Set((await admin.from("collection_items").select("collection_id").in("artwork_id", works)).data?.map((i) => i.collection_id) ?? [])]
+  await admin.from("rental_requests").delete().in("collection_id", colIds)
+  await admin.from("collections").delete().in("id", colIds)
   const paths = (await admin.from("artwork_images").select("storage_path").in("artwork_id", works)).data?.map((r) => r.storage_path) ?? []
   for (let i = 0; i < paths.length; i += 50) await admin.storage.from("artworks").remove(paths.slice(i, i + 50))
   await admin.from("review_logs").delete().in("entity_id", [...works, ...aids])
   await admin.from("artworks").delete().in("artist_id", aids)
   await admin.from("galleries").delete().in("artist_id", aids)
   for (const u of uids) await admin.auth.admin.deleteUser(u)
-  console.log(`removed ${uids.length} artists, ${works.length} works, ${paths.length} images`)
+  console.log(`removed ${uids.length} artists, ${colIds.length} collections, ${works.length} works, ${paths.length} images`)
 }
 main()
