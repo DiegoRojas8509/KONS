@@ -1,5 +1,7 @@
 import Link from "next/link"
 
+import { Wordmark } from "@/components/site/wordmark"
+
 const navLink =
   "font-mono text-[0.68rem] uppercase tracking-[0.12em] text-ink underline-offset-8 hover:underline focus-visible:underline sm:text-xs sm:tracking-[0.14em]"
 
@@ -14,9 +16,9 @@ export function SiteHeader() {
             Catálogo
           </Link>
         </nav>
-        <Link href="/" aria-label="KONS, inicio" className="order-first font-display text-3xl uppercase leading-none tracking-wide sm:order-none">
-          Kons
-        </Link>
+        <div className="order-first sm:order-none">
+          <Wordmark />
+        </div>
         <nav aria-label="Cuenta" className="flex items-center justify-end gap-4 sm:gap-6">
           <Link href="/catalogo" className={`${navLink} sm:hidden`}>
             Catálogo
