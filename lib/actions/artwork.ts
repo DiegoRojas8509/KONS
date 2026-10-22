@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 import type { ActionResult } from "@/lib/actions/artist"
 import { getCurrentArtist } from "@/lib/data/artist"
@@ -14,7 +13,7 @@ import {
   type ArtworkInput,
 } from "@/lib/validations/artwork"
 
-export async function createArtwork(input: ArtworkInput): Promise<ActionResult> {
+export async function createArtwork(input: ArtworkInput): Promise<{ error: string } | { id: string }> {
   const parsed = artworkSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Datos inválidos." }
 
@@ -31,7 +30,7 @@ export async function createArtwork(input: ArtworkInput): Promise<ActionResult> 
   if (error || !data) return { error: "No pudimos guardar la obra. Revisa los datos e inténtalo de nuevo." }
 
   revalidatePath("/artista/obras")
-  redirect(`/artista/obras/${data.id}`)
+  return { id: data.id }
 }
 
 export async function submitArtworkForReview(id: string): Promise<ActionResult> {
