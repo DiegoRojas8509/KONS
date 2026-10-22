@@ -42,3 +42,4 @@ next-env.d.ts
 !.env.example
 .claude/
 .next.nosync/
+scripts/demo/.cache/
